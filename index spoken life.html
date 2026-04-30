@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Spoken Life">
+<meta name="theme-color" content="#1a1035">
+<title>Spoken Life</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --deep: #1a1035;
+  --mid: #2d1f5e;
+  --accent: #c9a96e;
+  --accent-light: #e8d5b0;
+  --life: #4a9e6b;
+  --life-light: #d4edd e;
+  --death: #c0504a;
+  --death-light: #f5e0df;
+  --surface: #f7f4ef;
+  --white: #ffffff;
+  --text: #1a1035;
+  --text-soft: #6b6080;
+  --text-lighter: #a098b8;
+  --border: rgba(26,16,53,0.1);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--surface);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── SPLASH ── */
+#splash {
+  position: fixed; inset: 0; z-index: 100;
+  background: var(--deep);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  transition: opacity 0.6s ease;
+}
+#splash.hide { opacity: 0; pointer-events: none; }
+.splash-mark {
+  width: 72px; height: 72px;
+  border: 1.5px solid var(--accent);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 1.5rem;
+  animation: pulse-ring 2s ease infinite;
+}
+@keyframes pulse-ring {
+  0%,100%{box-shadow:0 0 0 0 rgba(201,169,110,0.3);}
+  50%{box-shadow:0 0 0 16px rgba(201,169,110,0);}
+}
+.splash-mark svg { width: 32px; height: 32px; }
+.splash-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 36px; font-weight: 500;
+  color: var(--white); letter-spacing: 0.02em;
+  margin-bottom: 6px;
+}
+.splash-verse {
+  font-size: 12px; color: var(--accent-light);
+  letter-spacing: 0.06em; text-align: center;
+}
+
+/* ── LAYOUT ── */
+#app { display: flex; flex-direction: column; min-height: 100vh; padding-bottom: 80px; }
+
+/* ── TOP BAR ── */
+.topbar {
+  background: var(--deep);
+  padding: 1rem 1.25rem 1.25rem;
+  position: sticky; top: 0; z-index: 10;
+}
+.topbar-inner { display: flex; align-items: center; justify-content: space-between; }
+.app-wordmark {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px; font-weight: 500;
+  color: var(--white); letter-spacing: 0.02em;
+}
+.app-wordmark span { color: var(--accent); }
+.streak-chip {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(201,169,110,0.15);
+  border: 0.5px solid rgba(201,169,110,0.4);
+  border-radius: 20px; padding: 4px 12px;
+  font-size: 12px; color: var(--accent-light); font-weight: 500;
+}
+.flame { font-size: 14px; }
+
+/* ── SCREENS ── */
+.screen { display: none; padding: 1.25rem; animation: fadeIn 0.3s ease; }
+.screen.active { display: block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+/* ── HOME ── */
+.date-label {
+  font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-lighter); margin-bottom: 0.5rem; font-weight: 500;
+}
+.section-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px; font-weight: 500; color: var(--text);
+  line-height: 1.2; margin-bottom: 1.25rem;
+}
+
+/* FLIP CARD */
+.flip-wrap { perspective: 900px; margin-bottom: 0.5rem; }
+.flip-card {
+  width: 100%; min-height: 200px;
+  position: relative; transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(.4,0,.2,1);
+  cursor: pointer;
+}
+.flip-card.flipped { transform: rotateY(180deg); }
+.flip-face {
+  position: absolute; width: 100%; min-height: 200px;
+  backface-visibility: hidden; border-radius: var(--radius);
+  padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between;
+}
+.flip-front { background: var(--death-light); border: 1px solid rgba(192,80,74,0.2); }
+.flip-back { background: #e8f5ee; border: 1px solid rgba(74,158,107,0.25); transform: rotateY(180deg); }
+.face-label {
+  font-size: 10px; font-weight: 500; letter-spacing: 0.1em;
+  text-transform: uppercase; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 6px;
+}
+.face-label-death { color: var(--death); }
+.face-label-life { color: var(--life); }
+.dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.dot-death { background: var(--death); }
+.dot-life { background: var(--life); }
+.face-phrase {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px; font-weight: 500; line-height: 1.4;
+  flex: 1; display: flex; align-items: center;
+}
+.face-phrase-death { color: #8b3530; }
+.face-phrase-life { color: #2d7a4f; }
+.face-footer { margin-top: 12px; }
+.face-verse { font-size: 11px; color: var(--text-soft); font-style: italic; }
+.face-verse strong { color: #533AB7; font-style: normal; font-weight: 500; }
+.flip-hint {
+  text-align: center; font-size: 12px; color: var(--text-lighter);
+  margin-bottom: 1.25rem;
+}
+
+/* STAT STRIP */
+.stat-strip { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 1.5rem; }
+.stat-tile {
+  background: var(--white); border-radius: var(--radius-sm);
+  border: 0.5px solid var(--border); padding: 0.85rem 0.75rem; text-align: center;
+}
+.stat-num { font-size: 22px; font-weight: 500; color: var(--deep); }
+.stat-lbl { font-size: 11px; color: var(--text-lighter); margin-top: 2px; }
+
+/* CTA BUTTON */
+.cta-btn {
+  width: 100%; padding: 1rem;
+  background: var(--deep); color: var(--white);
+  border: none; border-radius: var(--radius);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px; font-weight: 500; cursor: pointer;
+  letter-spacing: 0.02em; transition: background 0.2s;
+}
+.cta-btn:hover { background: var(--mid); }
+.cta-btn-outline {
+  width: 100%; padding: 0.85rem;
+  background: transparent; color: var(--deep);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px; font-weight: 400; cursor: pointer;
+  margin-top: 0.6rem; transition: background 0.2s;
+}
+.cta-btn-outline:hover { background: var(--white); }
+
+/* ── PRACTICE ── */
+.quiz-card {
+  background: var(--white); border-radius: var(--radius);
+  border: 0.5px solid var(--border); padding: 1.25rem; margin-bottom: 1rem;
+}
+.quiz-cat-badge {
+  font-size: 10px; font-weight: 500; letter-spacing: 0.08em;
+  text-transform: uppercase; padding: 3px 10px;
+  border-radius: 20px; display: inline-block; margin-bottom: 10px;
+}
+.quiz-death {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px; font-weight: 500; color: #8b3530; line-height: 1.4;
+}
+.section-label-sm {
+  font-size: 11px; font-weight: 500; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text-lighter); margin-bottom: 0.6rem;
+}
+.choice {
+  width: 100%; text-align: left; padding: 0.85rem 1rem;
+  background: var(--white); border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm); margin-bottom: 0.5rem;
+  font-family: 'DM Sans', sans-serif; font-size: 14px;
+  color: var(--text); cursor: pointer; line-height: 1.5;
+  transition: border-color 0.15s, background 0.15s;
+}
+.choice:hover { border-color: #7F77DD; }
+.choice.correct { background: #e8f5ee; border-color: var(--life); color: #1e5c38; }
+.choice.wrong { background: var(--death-light); border-color: var(--death); color: #8b3530; }
+.result-card {
+  background: var(--white); border-radius: var(--radius);
+  border: 0.5px solid var(--border); padding: 1.25rem;
+  margin-top: 0.75rem; text-align: center;
+}
+.result-icon { font-size: 32px; margin-bottom: 0.5rem; }
+.result-title { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 500; margin-bottom: 6px; }
+.result-verse { font-size: 13px; color: var(--text-soft); font-style: italic; line-height: 1.6; }
+.result-ref { color: #533AB7; font-style: normal; font-weight: 500; }
+
+/* ── LIBRARY ── */
+.lib-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1rem; overflow-x: auto; }
+.lib-tab {
+  padding: 5px 13px; border-radius: 20px;
+  border: 0.5px solid var(--border); font-size: 12px;
+  cursor: pointer; background: none; color: var(--text-soft);
+  white-space: nowrap; font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s;
+}
+.lib-tab.on { background: var(--deep); color: var(--accent-light); border-color: var(--deep); }
+.lib-search {
+  width: 100%; padding: 10px 14px; font-size: 14px;
+  border: 0.5px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--white); color: var(--text); margin-bottom: 1rem;
+  font-family: 'DM Sans', sans-serif;
+}
+.lib-item {
+  background: var(--white); border-radius: var(--radius);
+  border: 0.5px solid var(--border); margin-bottom: 0.65rem; overflow: hidden;
+}
+.lib-header {
+  padding: 1rem 1.1rem; cursor: pointer;
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.lib-death {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 17px; font-weight: 500; color: #8b3530;
+  flex: 1; line-height: 1.4;
+}
+.lib-toggle { color: var(--text-lighter); font-size: 18px; flex-shrink: 0; margin-top: 2px; }
+.lib-body { display: none; padding: 0 1.1rem 1rem; border-top: 0.5px solid var(--border); }
+.lib-body.open { display: block; }
+.lib-life-label {
+  font-size: 10px; font-weight: 500; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--life); margin: 10px 0 5px;
+}
+.lib-life {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 17px; font-weight: 500; color: #2d7a4f; line-height: 1.5;
+  margin-bottom: 8px;
+}
+.lib-verse { font-size: 12px; color: var(--text-soft); font-style: italic; line-height: 1.5; }
+.lib-verse-ref { color: #533AB7; font-style: normal; font-weight: 500; }
+.lib-insight {
+  font-size: 12px; color: var(--text-soft); line-height: 1.6;
+  margin-top: 6px; padding-top: 6px; border-top: 0.5px solid var(--border);
+}
+
+/* ── HABIT ── */
+.habit-header {
+  background: var(--deep); border-radius: var(--radius);
+  padding: 1.25rem; margin-bottom: 1.25rem; color: var(--white);
+}
+.habit-header-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px; font-weight: 500; margin-bottom: 4px; color: var(--white);
+}
+.habit-header-sub { font-size: 13px; color: var(--accent-light); margin-bottom: 1rem; }
+.progress-bar { background: rgba(255,255,255,0.15); border-radius: 20px; height: 6px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 20px; background: var(--accent); transition: width 0.4s ease; }
+.progress-label { font-size: 11px; color: var(--accent-light); margin-top: 5px; text-align: right; }
+.habit-item {
+  background: var(--white); border-radius: var(--radius);
+  border: 0.5px solid var(--border); padding: 1rem 1.1rem;
+  margin-bottom: 0.65rem; display: flex; align-items: flex-start; gap: 12px;
+  cursor: pointer; transition: border-color 0.15s;
+}
+.habit-item.done { border-color: rgba(74,158,107,0.4); background: #f4fbf7; }
+.habit-check {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 1.5px solid var(--border); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; transition: all 0.2s; margin-top: 1px;
+}
+.habit-item.done .habit-check { background: var(--life); border-color: var(--life); color: white; }
+.habit-text { font-size: 14px; color: var(--text); line-height: 1.5; }
+.habit-verse-ref { font-size: 11px; color: var(--text-lighter); margin-top: 3px; }
+
+/* ── NAV BAR ── */
+.navbar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--deep); border-top: 0.5px solid rgba(255,255,255,0.1);
+  display: flex; z-index: 20;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.nav-item {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 10px 0 8px; cursor: pointer;
+  color: rgba(255,255,255,0.4);
+  transition: color 0.2s; border: none; background: none;
+  font-family: 'DM Sans', sans-serif;
+}
+.nav-item.active { color: var(--accent); }
+.nav-icon { font-size: 20px; line-height: 1; margin-bottom: 3px; }
+.nav-label { font-size: 10px; letter-spacing: 0.04em; }
+
+/* ── ONBOARDING ── */
+#onboarding {
+  position: fixed; inset: 0; z-index: 90;
+  background: var(--deep);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+#onboarding.hide { display: none; }
+.ob-screen { display: none; flex-direction: column; flex: 1; animation: obFade 0.4s ease; overflow-y: auto; }
+.ob-screen.active { display: flex; }
+@keyframes obFade { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+.ob-dots { display: flex; gap: 6px; justify-content: center; padding: 1rem 0 0.5rem; flex-shrink: 0; }
+.ob-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.2); transition: all 0.3s; }
+.ob-dot.on { background: var(--accent); width: 18px; border-radius: 3px; }
+.ob-body { flex: 1; padding: 1.75rem 1.5rem 1rem; display: flex; flex-direction: column; }
+.ob-footer { padding: 1rem 1.5rem calc(1.5rem + env(safe-area-inset-bottom)); flex-shrink: 0; }
+.ob-mark { width: 52px; height: 52px; border-radius: 50%; border: 1.5px solid var(--accent); display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem; font-size: 22px; }
+.ob-step { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 0.75rem; font-weight: 500; }
+.ob-title { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 500; color: #ffffff; line-height: 1.3; margin-bottom: 0.75rem; }
+.ob-title em { color: var(--accent); font-style: normal; }
+.ob-text { font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.7; margin-bottom: 1rem; }
+.ob-text strong { color: rgba(255,255,255,0.9); font-weight: 500; }
+.ob-pill-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1rem; }
+.ob-pill { font-size: 11px; padding: 4px 10px; border-radius: 20px; font-weight: 500; }
+.ob-pill-gold { background: rgba(201,169,110,0.15); color: #e8d5b0; border: 0.5px solid rgba(201,169,110,0.3); }
+.ob-pill-green { background: rgba(74,158,107,0.15); color: #7dd4a8; border: 0.5px solid rgba(74,158,107,0.3); }
+.ob-pill-soft { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); border: 0.5px solid rgba(255,255,255,0.12); }
+.ob-verse { font-size: 12px; color: rgba(201,169,110,0.7); font-style: italic; margin-top: auto; padding-top: 1rem; line-height: 1.6; border-top: 0.5px solid rgba(255,255,255,0.07); }
+.ob-verse strong { color: var(--accent); font-style: normal; }
+.ob-feature { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 0.85rem; }
+.ob-feat-icon { width: 32px; height: 32px; border-radius: 8px; background: rgba(201,169,110,0.12); display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+.ob-feat-text { font-size: 13px; color: rgba(255,255,255,0.65); line-height: 1.5; }
+.ob-feat-text strong { color: rgba(255,255,255,0.9); font-weight: 500; display: block; margin-bottom: 1px; }
+.ob-guard-card { background: rgba(255,255,255,0.06); border: 0.5px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 1rem 1.1rem; margin-bottom: 0.75rem; }
+.ob-guard-title { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.85); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.ob-guard-text { font-size: 12px; color: rgba(255,255,255,0.5); line-height: 1.6; }
+.ob-crisis-card { background: rgba(201,169,110,0.08); border: 0.5px solid rgba(201,169,110,0.25); border-radius: 14px; padding: 1rem 1.1rem; margin-bottom: 0.75rem; }
+.ob-crisis-title { font-size: 10px; font-weight: 500; color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+.ob-crisis-text { font-size: 12px; color: rgba(255,255,255,0.5); line-height: 1.6; }
+.ob-crisis-line { font-size: 13px; color: #e8d5b0; font-weight: 500; margin-top: 4px; }
+.ob-agree-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 1rem; cursor: pointer; }
+.ob-checkbox { width: 22px; height: 22px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.25); flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); margin-top: 1px; transition: all 0.2s; font-size: 12px; color: var(--deep); }
+.ob-checkbox.checked { background: var(--accent); border-color: var(--accent); }
+.ob-agree-text { font-size: 12px; color: rgba(255,255,255,0.5); line-height: 1.6; }
+.ob-agree-text strong { color: rgba(255,255,255,0.8); font-weight: 500; }
+.ob-next-btn { width: 100%; padding: 0.9rem; background: var(--accent); color: var(--deep); border: none; border-radius: 14px; font-size: 15px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: opacity 0.2s; }
+.ob-next-btn:hover { opacity: 0.9; }
+.ob-start-btn { width: 100%; padding: 0.9rem; background: var(--accent); color: var(--deep); border: none; border-radius: 14px; font-size: 15px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; opacity: 0.35; transition: opacity 0.2s; }
+.ob-start-btn.ready { opacity: 1; }
+
+/* CATEGORY COLORS */
+.cat-fear{background:#FBEAF0;color:#72243E;}
+.cat-gossip{background:#E6F1FB;color:#0C447C;}
+.cat-complain{background:#FAEEDA;color:#633806;}
+.cat-self{background:#EEEDFE;color:#3C3489;}
+.cat-doubt{background:#F1EFE8;color:#444441;}
+.cat-anger{background:#FCEBEB;color:#791F1F;}
+.cat-comparison{background:#FAECE7;color:#712B13;}
+.cat-lack{background:#EAF3DE;color:#27500A;}
+.cat-relationships{background:#E1F5EE;color:#085041;}
+.cat-identity{background:#EEEDFE;color:#26215C;}
+</style>
+</head>
+<body>
+
+<!-- ── ONBOARDING ── -->
+<div id="onboarding">
+  <div class="ob-dots">
+    <div class="ob-dot on" id="od0"></div>
+    <div class="ob-dot" id="od1"></div>
+    <div class="ob-dot" id="od2"></div>
+    <div class="ob-dot" id="od3"></div>
+  </div>
+
+  <!-- OB SCREEN 1: WELCOME -->
+  <div class="ob-screen active" id="ob0">
+    <div class="ob-body">
+      <div class="ob-step">Welcome</div>
+      <div class="ob-mark">✦</div>
+      <div class="ob-title">Death and life are in the power of <em>the tongue.</em></div>
+      <div class="ob-text">Spoken Life is your daily companion for replacing words that drain you with words that build you — all rooted in scripture.</div>
+      <div class="ob-pill-row">
+        <span class="ob-pill ob-pill-gold">Proverbs 18:21</span>
+        <span class="ob-pill ob-pill-green">Grace-based</span>
+        <span class="ob-pill ob-pill-soft">No shame. Ever.</span>
+      </div>
+      <div class="ob-verse">"Whoever loves life and desires to see many good days must keep their tongue from evil." <strong>Psalm 34:12-13</strong></div>
+    </div>
+    <div class="ob-footer">
+      <button class="ob-next-btn" onclick="obGo(1)">Let's begin →</button>
+    </div>
+  </div>
+
+  <!-- OB SCREEN 2: WHAT IT DOES -->
+  <div class="ob-screen" id="ob1">
+    <div class="ob-body">
+      <div class="ob-step">What Spoken Life does</div>
+      <div class="ob-title" style="margin-bottom:1.25rem;">A simple daily <em>habit</em> that rewires how you speak.</div>
+      <div class="ob-feature">
+        <div class="ob-feat-icon">⇄</div>
+        <div class="ob-feat-text"><strong>Recognize & replace</strong>Flip death phrases into life phrases backed by God's Word — one day at a time.</div>
+      </div>
+      <div class="ob-feature">
+        <div class="ob-feat-icon">✦</div>
+        <div class="ob-feat-text"><strong>Daily declarations</strong>Speak scripture-rooted affirmations aloud each morning to build a new habit of life-giving words.</div>
+      </div>
+      <div class="ob-feature">
+        <div class="ob-feat-icon">☰</div>
+        <div class="ob-feat-text"><strong>Phrase library</strong>Fear, gossip, comparison, self-talk, doubt and more — with the scripture behind every shift.</div>
+      </div>
+      <div class="ob-feature">
+        <div class="ob-feat-icon">🔥</div>
+        <div class="ob-feat-text"><strong>Daily streak</strong>Build consistency that celebrates your growth without pressure.</div>
+      </div>
+    </div>
+    <div class="ob-footer">
+      <button class="ob-next-btn" onclick="obGo(2)">Continue →</button>
+    </div>
+  </div>
+
+  <!-- OB SCREEN 3: GUARDRAILS -->
+  <div class="ob-screen" id="ob2">
+    <div class="ob-body">
+      <div class="ob-step">Before you begin</div>
+      <div class="ob-title" style="margin-bottom:0.75rem;">This app is a <em>tool,</em> not a treatment.</div>
+      <div class="ob-text">We care deeply about your whole wellbeing — not just your words. Please read this before continuing.</div>
+      <div class="ob-guard-card">
+        <div class="ob-guard-title">🤝 Spoken Life is a spiritual growth tool</div>
+        <div class="ob-guard-text">This app helps you build daily habits around life-giving speech rooted in scripture. It is not a substitute for professional counseling, therapy, or medical care.</div>
+      </div>
+      <div class="ob-guard-card">
+        <div class="ob-guard-title">⛪ Community still matters</div>
+        <div class="ob-guard-text">No app replaces your pastor, your faith community, or genuine human relationship. Use Spoken Life alongside those — not instead of them.</div>
+      </div>
+      <div class="ob-crisis-card">
+        <div class="ob-crisis-title">If you are in crisis</div>
+        <div class="ob-crisis-text">If you are experiencing thoughts of self-harm, severe depression, or a mental health emergency, please reach out right now:</div>
+        <div class="ob-crisis-line">988 Suicide & Crisis Lifeline — call or text 988</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:4px;">Available 24/7 · Free · Confidential</div>
+      </div>
+    </div>
+    <div class="ob-footer">
+      <button class="ob-next-btn" onclick="obGo(3)">I understand →</button>
+    </div>
+  </div>
+
+  <!-- OB SCREEN 4: AGREE & BEGIN -->
+  <div class="ob-screen" id="ob3">
+    <div class="ob-body">
+      <div class="ob-step">One last thing</div>
+      <div class="ob-title" style="margin-bottom:0.75rem;">You're about to start <em>speaking life.</em></div>
+      <div class="ob-text">This is a judgment-free zone. You'll have good days and hard days. What matters is that you keep showing up.</div>
+      <div class="ob-agree-row" onclick="obToggle(1)">
+        <div class="ob-checkbox" id="obchk1"></div>
+        <div class="ob-agree-text">I understand that Spoken Life is a <strong>spiritual growth tool</strong> and not a replacement for professional counseling, medical care, or my faith community.</div>
+      </div>
+      <div class="ob-agree-row" onclick="obToggle(2)">
+        <div class="ob-checkbox" id="obchk2"></div>
+        <div class="ob-agree-text">I commit to approaching this with <strong>grace for myself</strong> — progress over perfection, always.</div>
+      </div>
+      <div class="ob-verse" style="margin-top:auto;">"Let the words of my mouth and the meditation of my heart be acceptable in Your sight, O Lord." <strong>Psalm 19:14</strong></div>
+    </div>
+    <div class="ob-footer">
+      <button class="ob-start-btn" id="ob-start" onclick="obFinish()">Begin my journey ✦</button>
+    </div>
+  </div>
+</div>
+
+<div id="splash">
+  <div class="splash-mark">
+    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M16 4C16 4 8 10 8 18C8 22.4 11.6 26 16 26C20.4 26 24 22.4 24 18C24 10 16 4 16 4Z" stroke="#c9a96e" stroke-width="1.2" fill="none"/>
+      <path d="M16 12V20M12 16H20" stroke="#c9a96e" stroke-width="1.2" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div class="splash-title">Spoken Life</div>
+  <div class="splash-verse">Death and life are in the power of the tongue — Prov. 18:21</div>
+</div>
+
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="app-wordmark">Spoken <span>Life</span></div>
+      <div class="streak-chip"><span class="flame">🔥</span><span id="streak-num">7</span> day streak</div>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <div id="screen-home" class="screen active">
+    <div class="date-label" id="today-date"></div>
+    <div class="section-title">Today's word<br>to transform</div>
+
+    <div class="flip-wrap">
+      <div class="flip-card" id="flip-card" onclick="this.classList.toggle('flipped')">
+        <div class="flip-face flip-front">
+          <div>
+            <div class="face-label face-label-death"><span class="dot dot-death"></span>Death phrase</div>
+            <div class="face-phrase face-phrase-death" id="home-death">"Nothing ever goes right for me."</div>
+          </div>
+          <div class="face-footer">
+            <div class="face-verse">Tap to reveal the life phrase</div>
+          </div>
+        </div>
+        <div class="flip-face flip-back">
+          <div>
+            <div class="face-label face-label-life"><span class="dot dot-life"></span>Life phrase</div>
+            <div class="face-phrase face-phrase-life" id="home-life">"God is working all things together for my good."</div>
+          </div>
+          <div class="face-footer">
+            <div class="face-verse" id="home-verse"><strong>Romans 8:28</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="flip-hint">Tap the card to flip</div>
+
+    <div class="stat-strip">
+      <div class="stat-tile"><div class="stat-num" style="color:#533AB7;">7</div><div class="stat-lbl">Day streak</div></div>
+      <div class="stat-tile"><div class="stat-num" style="color:#2d7a4f;">24</div><div class="stat-lbl">Phrases flipped</div></div>
+      <div class="stat-tile"><div class="stat-num" style="color:#185FA5;">8/10</div><div class="stat-lbl">Today's habits</div></div>
+    </div>
+
+    <button class="cta-btn" onclick="goTo('practice')">Practice this phrase →</button>
+    <button class="cta-btn-outline" onclick="goTo('habit')">View daily declarations</button>
+  </div>
+
+  <!-- PRACTICE -->
+  <div id="screen-practice" class="screen">
+    <div class="section-title" style="margin-bottom:1rem;">Flip the Script</div>
+    <div id="quiz-area"></div>
+  </div>
+
+  <!-- LIBRARY -->
+  <div id="screen-library" class="screen">
+    <div class="section-title" style="margin-bottom:1rem;">Phrase Library</div>
+    <input class="lib-search" type="text" id="lib-search" placeholder="Search phrases, verses, categories…" oninput="renderLib()">
+    <div class="lib-tabs" id="lib-tabs"></div>
+    <div id="lib-list"></div>
+  </div>
+
+  <!-- HABIT -->
+  <div id="screen-habit" class="screen">
+    <div class="habit-header">
+      <div class="habit-header-title">Daily Declarations</div>
+      <div class="habit-header-sub">Speak these aloud. Every word is a seed.</div>
+      <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+      <div class="progress-label" id="prog-label">0 of 10 completed</div>
+    </div>
+    <div id="habit-list"></div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="navbar">
+  <button class="nav-item active" id="nav-home" onclick="goTo('home')">
+    <div class="nav-icon">✦</div><div class="nav-label">Home</div>
+  </button>
+  <button class="nav-item" id="nav-practice" onclick="goTo('practice')">
+    <div class="nav-icon">⇄</div><div class="nav-label">Practice</div>
+  </button>
+  <button class="nav-item" id="nav-library" onclick="goTo('library')">
+    <div class="nav-icon">☰</div><div class="nav-label">Library</div>
+  </button>
+  <button class="nav-item" id="nav-habit" onclick="goTo('habit')">
+    <div class="nav-icon">✓</div><div class="nav-label">Declare</div>
+  </button>
+</nav>
+
+<script>
+// ── DATA ──
+const phrases = [
+  {cat:'fear',death:"I'm so scared this will all fall apart.",life:"God has not given me a spirit of fear, but of power, love and a sound mind.",verse:"2 Timothy 1:7",insight:"Fear declares that God is not in control. Faith declares that He is."},
+  {cat:'fear',death:"What if something terrible happens to my family?",life:"No weapon formed against me or my family shall prosper. God is our shield.",verse:"Isaiah 54:17",insight:"Worry is meditating on the worst. Declaration meditates on God's promises."},
+  {cat:'fear',death:"Everything feels out of control.",life:"God is my refuge and strength, a very present help in times of trouble.",verse:"Psalm 46:1",insight:"Control is an illusion we were never meant to carry."},
+  {cat:'fear',death:"I'm afraid to step out. What if I fail?",life:"God did not give me a timid spirit. I move forward in courage and faith.",verse:"Joshua 1:9",insight:"Every God-given step has ground beneath it, even when you cannot see it."},
+  {cat:'fear',death:"The future looks so dark and uncertain.",life:"God knows the plans He has for me — plans for a future and a hope.",verse:"Jeremiah 29:11",insight:"You don't need to see the whole road. Just the next step."},
+  {cat:'gossip',death:"Did you hear what she did? Let me tell you...",life:"I only speak what builds others up. I will not carry words that tear down.",verse:"Ephesians 4:29",insight:"Gossip feels like connection but it is actually isolation from genuine relationship."},
+  {cat:'gossip',death:"He'll never change.",life:"I speak growth and redemption over this person. God is still working in them.",verse:"Philippians 1:6",insight:"Labeling people keeps them — and you — stuck."},
+  {cat:'gossip',death:"Everyone knows she has issues.",life:"I extend grace because I have been given grace. I speak kindly or not at all.",verse:"Colossians 4:6",insight:"Speaking of others' failures reveals more about your own heart than theirs."},
+  {cat:'gossip',death:"I heard their marriage is in trouble.",life:"I speak blessing and restoration over their marriage and pray in private.",verse:"James 5:16",insight:"Marriages are healed by prayer, not by being talked about."},
+  {cat:'complain',death:"Nothing ever goes right for me.",life:"God is working all things together for my good. I trust His process.",verse:"Romans 8:28",insight:"Complaining declares God is not enough. Gratitude declares He is more than enough."},
+  {cat:'complain',death:"This is taking way too long. I'm so tired of waiting.",life:"I will wait on the Lord and He will renew my strength. His timing is perfect.",verse:"Isaiah 40:31",insight:"Waiting is not wasted time when God is the one doing the working."},
+  {cat:'complain',death:"Nobody appreciates me or what I do.",life:"I work heartily as unto the Lord, not for the approval of people.",verse:"Colossians 3:23",insight:"When you work for an audience of One, you are never unappreciated."},
+  {cat:'complain',death:"I can't catch a break. It's one thing after another.",life:"My help comes from the Lord who made heaven and earth. He is my ever-present help.",verse:"Psalm 121:2",insight:"Trials come in waves — but so does grace, and grace is always bigger."},
+  {cat:'self',death:"I'm so stupid. I always mess everything up.",life:"I am fearfully and wonderfully made. My steps are ordered by the Lord.",verse:"Psalm 139:14",insight:"How you speak about yourself shapes how you see yourself. Speak what God says."},
+  {cat:'self',death:"I'll never be good enough.",life:"I am complete in Christ who is the head of all principality and power.",verse:"Colossians 2:10",insight:"Good enough was settled at the cross. You don't earn it — you receive it."},
+  {cat:'self',death:"I'm such a failure.",life:"Though the righteous fall seven times, they rise again. I get up in Jesus' name.",verse:"Proverbs 24:16",insight:"Falling is not the same as failing. Staying down is."},
+  {cat:'self',death:"I'm too damaged for God to use me.",life:"God uses the broken, the weak, and the unlikely. My story is His greatest testimony.",verse:"2 Corinthians 12:9",insight:"Your greatest wound may become your greatest witness."},
+  {cat:'self',death:"I don't deserve good things.",life:"God takes pleasure in the prosperity of His servants. I receive His goodness.",verse:"Psalm 35:27",insight:"Unworthiness is a lie that keeps you from receiving what God freely gives."},
+  {cat:'doubt',death:"I don't think God even hears my prayers.",life:"God hears my prayers. He is close to the brokenhearted and attentive to my cry.",verse:"Psalm 34:18",insight:"Silence is not absence. God is always listening — even when you cannot feel it."},
+  {cat:'doubt',death:"I've been believing for so long. Nothing's happening.",life:"Faith is the substance of things hoped for. I will not throw away my confidence.",verse:"Hebrews 11:1",insight:"The answer may be one prayer away. Don't stop in the hallway."},
+  {cat:'doubt',death:"Maybe this promise isn't really for me.",life:"Every promise in God's Word is yes and amen for me through Christ Jesus.",verse:"2 Corinthians 1:20",insight:"The enemy's first strategy is always to make you doubt your access to God's promises."},
+  {cat:'doubt',death:"I've sinned too many times. God is done with me.",life:"God's mercies are new every morning. His grace is greater than all my sin.",verse:"Lamentations 3:22-23",insight:"You cannot out-sin the grace of God."},
+  {cat:'doubt',death:"This mountain is too big. Nothing will ever move it.",life:"I speak to this mountain in faith and it must move. Nothing is impossible with God.",verse:"Mark 11:23",insight:"Mountains don't move by looking at them. They move by speaking to them."},
+  {cat:'anger',death:"I will never forgive what they did to me.",life:"I choose to forgive as God has forgiven me. I release this person and this offense.",verse:"Ephesians 4:32",insight:"Unforgiveness is a prison where you are both the inmate and the jailer."},
+  {cat:'anger',death:"I'm so bitter about how that turned out.",life:"I release bitterness and receive healing. God will restore what was meant for harm.",verse:"Hebrews 12:15",insight:"Bitterness takes root when we water yesterday's wound instead of today's grace."},
+  {cat:'anger',death:"I hate them for what they did.",life:"I am commanded to love. I choose to pray for those who have wronged me.",verse:"Matthew 5:44",insight:"Hate is a fire that burns the one holding it more than the one it's aimed at."},
+  {cat:'anger',death:"I'm going to say exactly what I think about this.",life:"I will be slow to speak and slow to anger. My anger does not produce God's righteousness.",verse:"James 1:19-20",insight:"What you say in anger cannot be unsaid. Pause before you speak."},
+  {cat:'comparison',death:"Why does she always get the blessings? What about me?",life:"God's blessings are not limited. I celebrate their win — mine is on the way.",verse:"Galatians 6:4",insight:"Comparing your story to someone else's is comparing two books at different chapters."},
+  {cat:'comparison',death:"I'll never have what they have.",life:"God supplies all my needs according to His riches in glory. My blessing is coming.",verse:"Philippians 4:19",insight:"Focusing on what you lack closes your eyes to what you already have."},
+  {cat:'comparison',death:"I'm so behind where I should be at this point in life.",life:"God makes all things beautiful in His time. I am exactly where He needs me.",verse:"Ecclesiastes 3:11",insight:"There is no such thing as being behind on a God-written story."},
+  {cat:'comparison',death:"Their life looks so much easier than mine.",life:"I run my own race with patience, keeping my eyes on Jesus and not on others.",verse:"Hebrews 12:1-2",insight:"Looking sideways slows you down. Eyes forward always."},
+  {cat:'lack',death:"I never have enough money. I'm always broke.",life:"God is my provider. He supplies all my needs according to His riches in glory.",verse:"Philippians 4:19",insight:"Speaking lack over your life sows seeds that grow more lack. Speak abundance."},
+  {cat:'lack',death:"We can't afford that. We'll never get ahead.",life:"I am blessed coming in and going out. God opens the windows of heaven over my life.",verse:"Deuteronomy 28:6",insight:"Poverty is as much a mindset as a circumstance. Change the declaration, change the trajectory."},
+  {cat:'lack',death:"I'll probably be in debt for the rest of my life.",life:"I am being set free from debt. The blessing of the Lord makes rich and adds no sorrow.",verse:"Proverbs 10:22",insight:"Confession of permanent lack is a ceiling you set for yourself."},
+  {cat:'lack',death:"There's never enough to go around.",life:"God is El Shaddai — the more-than-enough God. There is always enough in His economy.",verse:"Genesis 17:1",insight:"Scarcity thinking limits a God who operates in limitless abundance."},
+  {cat:'relationships',death:"Nobody really cares about me.",life:"I am deeply loved by God and connected to the people He has placed in my life.",verse:"John 15:13",insight:"Loneliness lies. It says no one cares when the Creator of the universe called you by name."},
+  {cat:'relationships',death:"My marriage is never going to get better.",life:"I speak life over my marriage. What God has joined together, I will nurture with prayer.",verse:"Matthew 19:6",insight:"Declaring your marriage dead while you are still in it becomes a self-fulfilling prophecy."},
+  {cat:'relationships',death:"I always end up in broken relationships.",life:"God is healing my relational patterns and drawing the right people into my life.",verse:"Psalm 68:6",insight:"Declaring a pattern over yourself locks you into repeating it. Speak the breakthrough."},
+  {cat:'relationships',death:"I'll never trust anyone again.",life:"I will trust wisely, with God guiding my discernment and healing my ability to connect.",verse:"Proverbs 3:5-6",insight:"Closed hearts don't get hurt — but they also don't get healed or fulfilled."},
+  {cat:'identity',death:"I'm nobody special. I don't matter.",life:"I am chosen, royal, a holy nation and God's special possession, called out of darkness.",verse:"1 Peter 2:9",insight:"The enemy's primary strategy is to make you forget who you are."},
+  {cat:'identity',death:"I'm just a sinner saved by grace. I'll always struggle.",life:"I am a new creation in Christ. The old has gone and the new has come.",verse:"2 Corinthians 5:17",insight:"You are not just forgiven — you are transformed. Stop living from the old address."},
+  {cat:'identity',death:"I have no purpose. I'm just going through the motions.",life:"I was created in Christ Jesus for good works that God prepared in advance for me.",verse:"Ephesians 2:10",insight:"Purpose is not discovered by looking inward — it's found by looking at the One who made you."},
+  {cat:'identity',death:"I'm defined by my past mistakes.",life:"I am not my past. I am who God says I am — redeemed, restored, and moving forward.",verse:"Isaiah 43:18-19",insight:"God doesn't identify you by your history. He identifies you by your destiny."},
+  {cat:'identity',death:"I'll always be known for my worst moment.",life:"My identity is in Christ, not in my worst day. God is making all things new in me.",verse:"Revelation 21:5",insight:"God does not introduce you by your failure. He calls you by your name and your future."},
+];
+
+const habits = [
+  {text:"Before checking your phone, declare: 'This is the day the Lord has made. I will rejoice and be glad in it.'",verse:"Psalm 118:24",done:false},
+  {text:"Speak a blessing over someone you were tempted to gossip about.",verse:"Matthew 5:44",done:false},
+  {text:"Replace one fear thought with: 'God has not given me a spirit of fear, but of power, love and a sound mind.'",verse:"2 Timothy 1:7",done:false},
+  {text:"When you feel like complaining, pause and say 'Thank You, Lord' for three specific things.",verse:"1 Thessalonians 5:18",done:false},
+  {text:"Speak your identity aloud: 'I am chosen, loved, and called with purpose.'",verse:"1 Peter 2:9",done:false},
+  {text:"If you spoke a death phrase today, stop and replace it with the life phrase right now.",verse:"Proverbs 18:21",done:false},
+  {text:"Pray a blessing over your family out loud, calling out God's purpose for each person.",verse:"Numbers 6:24-26",done:false},
+  {text:"Declare provision over your finances: 'God is my provider and I lack nothing in Him.'",verse:"Philippians 4:19",done:false},
+  {text:"Speak peace over any relationship tension: 'I release this to God and choose forgiveness.'",verse:"Ephesians 4:32",done:false},
+  {text:"End your day declaring: 'God's mercies are new tomorrow. I rest in His faithfulness.'",verse:"Lamentations 3:22-23",done:false},
+];
+
+const catLabels = {
+  fear:'Fear & Anxiety', gossip:'Gossip', complain:'Complaining',
+  self:'Self-talk', doubt:'Doubt', anger:'Anger & Bitterness',
+  comparison:'Comparison', lack:'Lack & Poverty',
+  relationships:'Relationships', identity:'Identity'
+};
+
+// ── STATE ──
+let quizIdx = 0;
+let quizAnswered = false;
+let libCat = 'all';
+let openItems = new Set();
+
+// ── NAV ──
+function goTo(screen) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('screen-' + screen).classList.add('active');
+  document.getElementById('nav-' + screen).classList.add('active');
+  if (screen === 'practice') renderQuiz();
+  if (screen === 'library') renderLibInit();
+  if (screen === 'habit') renderHabits();
+  window.scrollTo(0,0);
+}
+
+// ── DATE ──
+function setDate() {
+  const d = new Date();
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('today-date').textContent = days[d.getDay()] + ', ' + months[d.getMonth()] + ' ' + d.getDate();
+}
+
+// ── HOME CARD ──
+function setHomeCard() {
+  const today = new Date().getDate();
+  const p = phrases[today % phrases.length];
+  document.getElementById('home-death').textContent = '"' + p.death + '"';
+  document.getElementById('home-life').textContent = '"' + p.life + '"';
+  document.getElementById('home-verse').innerHTML = '<strong>' + p.verse + '</strong>';
+}
+
+// ── QUIZ ──
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function renderQuiz() {
+  quizAnswered = false;
+  const p = phrases[quizIdx % phrases.length];
+  const others = phrases.filter(x => x !== p);
+  const shuffled = shuffle(others);
+  const choices = shuffle([p.life, shuffled[0].life, shuffled[1].life]);
+  const catClass = 'cat-' + p.cat;
+  const catLabel = catLabels[p.cat] || p.cat;
+
+  document.getElementById('quiz-area').innerHTML = `
+    <div class="quiz-card">
+      <span class="quiz-cat-badge ${catClass}">${catLabel}</span>
+      <div class="quiz-death">"${p.death}"</div>
+    </div>
+    <div class="section-label-sm">Choose the life phrase</div>
+    ${choices.map((c,i) => `<button class="choice" id="ch-${i}" onclick="pickAnswer(${i},'${encodeURIComponent(c)}','${encodeURIComponent(p.life)}','${encodeURIComponent(p.verse)}','${encodeURIComponent(p.insight)}')">${c}</button>`).join('')}
+    <div id="quiz-result"></div>
+  `;
+}
+
+function pickAnswer(i, chosen, correct, verse, insight) {
+  if (quizAnswered) return;
+  quizAnswered = true;
+  const ch = decodeURIComponent(chosen);
+  const cr = decodeURIComponent(correct);
+  const v = decodeURIComponent(verse);
+  const ins = decodeURIComponent(insight);
+  const btn = document.getElementById('ch-'+i);
+  if (ch === cr) {
+    btn.classList.add('correct');
+    document.getElementById('quiz-result').innerHTML = `
+      <div class="result-card">
+        <div class="result-icon">🌿</div>
+        <div class="result-title" style="color:#2d7a4f;">You chose life!</div>
+        <div class="result-verse" style="margin:8px 0;">"${cr}"</div>
+        <div class="result-verse"><span class="result-ref">${v}</span></div>
+        <div class="result-verse" style="margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border);">${ins}</div>
+        <button class="cta-btn" style="margin-top:1rem;" onclick="quizIdx++;renderQuiz()">Next phrase →</button>
+      </div>`;
+  } else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('.choice').forEach(b => {
+      if (b.textContent === cr) b.classList.add('correct');
+    });
+    document.getElementById('quiz-result').innerHTML = `
+      <div class="result-card">
+        <div class="result-icon">💛</div>
+        <div class="result-title" style="color:#8b3530;">Let's speak life instead</div>
+        <div class="result-verse" style="margin:8px 0;color:#2d7a4f;">"${cr}"</div>
+        <div class="result-verse"><span class="result-ref">${v}</span></div>
+        <button class="cta-btn" style="margin-top:1rem;" onclick="quizIdx++;renderQuiz()">Try another →</button>
+      </div>`;
+  }
+}
+
+// ── LIBRARY ──
+function renderLibInit() {
+  const tabs = document.getElementById('lib-tabs');
+  const allCats = ['all', ...Object.keys(catLabels)];
+  tabs.innerHTML = allCats.map(c =>
+    `<button class="lib-tab${c===libCat?' on':''}" onclick="setLibCat('${c}',this)">${c==='all'?'All':catLabels[c]}</button>`
+  ).join('');
+  renderLib();
+}
+
+function setLibCat(cat, el) {
+  libCat = cat;
+  document.querySelectorAll('.lib-tab').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+  renderLib();
+}
+
+function renderLib() {
+  const q = (document.getElementById('lib-search')||{value:''}).value.toLowerCase();
+  const filtered = phrases.filter(p => {
+    const matchCat = libCat === 'all' || p.cat === libCat;
+    const matchQ = !q || p.death.toLowerCase().includes(q) || p.life.toLowerCase().includes(q) || p.verse.toLowerCase().includes(q);
+    return matchCat && matchQ;
+  });
+  document.getElementById('lib-list').innerHTML = filtered.length ? filtered.map((p,i) => {
+    const id = p.cat + i;
+    const isOpen = openItems.has(id);
+    const catClass = 'cat-' + p.cat;
+    return `<div class="lib-item">
+      <div class="lib-header" onclick="toggleLib('${id}')">
+        <div class="lib-death">"${p.death}"</div>
+        <div class="lib-toggle" id="lt-${id}">${isOpen?'−':'+'}</div>
+      </div>
+      <div class="lib-body${isOpen?' open':''}" id="lb-${id}">
+        <div class="lib-life-label">Life phrase</div>
+        <div class="lib-life">"${p.life}"</div>
+        <div class="lib-verse"><span class="lib-verse-ref">${p.verse}</span></div>
+        <div class="lib-insight">${p.insight}</div>
+      </div>
+    </div>`;
+  }).join('') : '<div style="text-align:center;color:var(--text-lighter);padding:2rem;font-size:14px;">No phrases found.</div>';
+}
+
+function toggleLib(id) {
+  const body = document.getElementById('lb-'+id);
+  const icon = document.getElementById('lt-'+id);
+  if (openItems.has(id)) { openItems.delete(id); body.classList.remove('open'); icon.textContent='+'; }
+  else { openItems.add(id); body.classList.add('open'); icon.textContent='−'; }
+}
+
+// ── HABITS ──
+function renderHabits() {
+  const done = habits.filter(h=>h.done).length;
+  const pct = Math.round((done/habits.length)*100);
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('prog-label').textContent = done + ' of ' + habits.length + ' completed';
+  document.getElementById('habit-list').innerHTML = habits.map((h,i) =>
+    `<div class="habit-item${h.done?' done':''}" onclick="toggleHabit(${i})">
+      <div class="habit-check">${h.done?'✓':''}</div>
+      <div>
+        <div class="habit-text">${h.text}</div>
+        <div class="habit-verse-ref">${h.verse}</div>
+      </div>
+    </div>`
+  ).join('');
+}
+
+function toggleHabit(i) {
+  habits[i].done = !habits[i].done;
+  renderHabits();
+}
+
+// ── ONBOARDING ──
+let obCur = 0;
+let obChk1 = false;
+let obChk2 = false;
+const OB_KEY = 'sl_onboarded_v1';
+
+function obGo(n) {
+  document.getElementById('ob'+obCur).classList.remove('active');
+  document.getElementById('od'+obCur).classList.remove('on');
+  obCur = n;
+  document.getElementById('ob'+obCur).classList.add('active');
+  document.getElementById('od'+obCur).classList.add('on');
+}
+
+function obToggle(n) {
+  if (n===1) { obChk1=!obChk1; const el=document.getElementById('obchk1'); el.classList.toggle('checked',obChk1); el.textContent=obChk1?'✓':''; }
+  if (n===2) { obChk2=!obChk2; const el=document.getElementById('obchk2'); el.classList.toggle('checked',obChk2); el.textContent=obChk2?'✓':''; }
+  document.getElementById('ob-start').classList.toggle('ready', obChk1 && obChk2);
+}
+
+function obFinish() {
+  if (!obChk1 || !obChk2) return;
+  try { localStorage.setItem(OB_KEY,'1'); } catch(e){}
+  document.getElementById('onboarding').classList.add('hide');
+  startApp();
+}
+
+function startApp() {
+  setDate();
+  setHomeCard();
+  setTimeout(() => {
+    document.getElementById('splash').classList.add('hide');
+    setTimeout(() => document.getElementById('splash').style.display='none', 600);
+  }, 1800);
+}
+
+// Check if already onboarded
+(function() {
+  let done = false;
+  try { done = localStorage.getItem(OB_KEY) === '1'; } catch(e){}
+  if (done) {
+    document.getElementById('onboarding').classList.add('hide');
+    startApp();
+  }
+})();
+
+// ── INIT handled by onboarding flow above ──
+</script>
+</body>
+</html>
